@@ -474,7 +474,7 @@ class churning:
 		if random.randint(0, 100000) <= churn_prob:
 			while True: # ensure 0 < R <= Rmax
 				new_R = self.R + random.gauss(0, self.churning_scale)
-				if new_R > 0 and new_R <= self.radial_bins[-1]*self.zone_width:
+				if new_R > 0 and new_R <= self.radial_bins[-1]:
 					self.R = new_R
 					break
 
@@ -625,14 +625,13 @@ class blurring:
 		calculate where on the eccentric orbit the body currently is
 		"""
 		c = self.R_G * self.ecc
-# 		print(c, time, self.ecc)
 
 		new_R = self.R_G + c * m.sin(
 			(time - self.blurring_start) / self.rotation_Gyr * 2 * m.pi)
 		if new_R <= 0:
 			return 0.1
-		elif new_R > self.radial_bins[-1]*self.zone_width:
-			return (self.radial_bins[-1] - 0.1) * self.zone_width
+		elif new_R > self.radial_bins[-1]:
+			return (self.radial_bins[-1] - 0.1)
 		else:
 			return new_R
 
@@ -744,6 +743,29 @@ class migration_churn_blur:
 				self.R_G = self.chur(zone, tform, time) * self.zone_width
 				R = self.blur(int((self.R_G / self.zone_width)),
 				  tform, time) * self.zone_width
-				print(self.R_G, R)
 				return int((R / self.zone_width))
+
+	def close_file(self):
+		r"""
+		Closes the output file - should be called after the multizone model
+		simulation runs.
+		"""
+		self._file.close()
+
+	@property
+	def write(self):
+		r"""
+		Type : bool
+
+		Whether or not to write out to the extra star particle data output
+		file. For internal use by the vice.multizone object only.
+		"""
+		return self._write
+
+	@write.setter
+	def write(self, value):
+		if isinstance(value, bool):
+			self._write = value
+		else:
+			raise TypeError("Must be a boolean. Got: %s" % (type(value)))
 
